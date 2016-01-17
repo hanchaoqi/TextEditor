@@ -1,3 +1,6 @@
+*.opensdf
+*.sdf
+
 # Compiled Object files
 *.slo
 *.lo
