@@ -4,6 +4,7 @@
 Debug/
 *vcxproj
 *.filters
+*.sln
 # Compiled Object files
 *.slo
 *.lo

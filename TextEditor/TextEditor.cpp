@@ -1,4 +1,5 @@
 #include "stl_vector.h"
+#include "stl_list.h"
 
 int main()
 {
@@ -11,6 +12,15 @@ int main()
 	{
 		cout << *p << '\t';
 	}
+	cout << endl;
+
+	list<int> l;
+	l.push_back(1);
+	l.push_back(2);
+	l.push_back(3);
+	
+	for (list<int>::iterator it = l.begin(); it != l.end(); it++)
+		cout << *it << "\t";
 	cout << endl;
 	system("pause");
 	return 0;

@@ -1,22 +1,27 @@
 #include <iostream>
 #include <string>
 using namespace std;
-struct Out_of_range{};
+typedef unsigned long size_type;
+
+template<typename InputIterator> void distance(InputIterator first, InputIterator last, size_type& result);
 
 template<class Elem> struct Link
 {
-	Link* prev;
-	Link* succ;
+	Link<Elem>* prev;
+	Link<Elem>* succ;
 	Elem val;
 };
 template<class Elem> class list{
 	Link<Elem>* first;
 	Link<Elem>* last;
 public:
-	typedef unsigned long size_type;
+	
 	typedef Elem value_type;
+	typedef Link<Elem>* link_type;
 	class iterator;
 	class const_iterator;
+
+	link_type node;
 
 	iterator begin();
 	const_iterator begin() const;
@@ -38,19 +43,20 @@ public:
 };
 
 template<class Elem> class list<Elem>::iterator{
-	Link<Elem>* cur;
+	Link<Elem>* curr;
 public:
 	iterator(Link<Elem>* p) :curr(p){}
 
 	iterator& operator++(){ curr = curr->succ; return *this; }
 	iterator& operator--(){ curr = curr->prev; return *this; }
 	Elem& operator*(){ return curr->val; }
-
+	iterator operator->(){ return &(operator*()); }
+	
 	bool operator==(const iterator& b)const{ return curr == b.curr; }
 	bool operator!=(const iterator& b)const{ return curr != b.curr; }
 };
 template<class Elem> class list<Elem>::const_iterator{
-	const Link<Elem>* cur;
+	const Link<Elem>* curr;
 public:
 	const_iterator(const Link* p) :curr(p){}
 
@@ -61,34 +67,82 @@ public:
 	bool operator==(const const_iterator& b)const{ return curr == b.curr; }
 	bool operator!=(const const_iterator& b)const{ return curr != b.curr; }
 };
-template<class Elem> list<Elem>::iterator list<Elem>::begin()
+
+template<class Elem> typename list<Elem>::iterator list<Elem>::begin()
 {
-	return iterator(first);
+	return first;
 }
-template<class Elem> list<Elem>::const_iterator list<Elem>::begin() const
+template<class Elem> typename list<Elem>::const_iterator list<Elem>::begin() const
 {
-	return iterator(first);
+	return first;
 }
-template<class Elem> list<Elem>::iterator list<Elem>::end()
+template<class Elem> typename list<Elem>::iterator list<Elem>::end()
 {
-	return iterator(last);
+	return last;
 }
-template<class Elem> list<Elem>::const_iterator list<Elem>::end() const
+template<class Elem> typename list<Elem>::const_iterator list<Elem>::end() const
 {
-	return iterator(last);
+	return last;
 }
-template<class Elem> list<Elem>::size_type list<Elem>::size()
+template<class Elem> typename size_type list<Elem>::size()
 {
-	return last - first;
+	size_type result = 0;
+	distance(begin(), end(), result);
+	return result;
 }
 
-iterator insert(iterator p, const Elem& v);
-iterator erase(iterator p);
+template<class Elem> typename list<Elem>::iterator list<Elem>::insert(iterator p, const Elem& v)
+{
+	link_type tmp = &(Link(v));
+	p->succ->prev = tmp;
+	tmp->succ = p->succ;
+	p->succ = tmp;
+	tmp->prev = p;
+	return p;
+}
+template<class Elem> typename list<Elem>::iterator list<Elem>::erase(iterator p)
+{
+	if (p == this->begin())
+	{
+		this->first = p->succ;
+		delete p;
+		return this;
+	}
+	p->prev->succ = p->succ;
+	p->succ->prev = p->prev;
+	delete p;
+	return this;
+}
 
-void push_back(const Elem& v);
-void push_front(const Elem& v);
-void pop_front();
-void pop_back();
+template<class Elem> void list<Elem>::push_back(const Elem& v)
+{
+	link_type tmp = &(Link(v));
+	this->last->prev->succ = tmp;
+	tmp->prev = this->last->prev;
+	tmp->succ = this->last;
+	this->last->prev = tmp;
+}
+template<class Elem> void list<Elem>::push_front(const Elem& v)
+{
+	link_type tmp = &(Link(v));
+	this->first->prev = tmp;
+	tmp->succ = this->first;
+	this->first = tmp;
+}
+template<class Elem> void list<Elem>::pop_front()
+{
+	erase(this->first);
+}
+template<class Elem> void list<Elem>::pop_back()
+{
+	erase(this->last->prev);
+}
 
-Elem& front();
-Elem& back();
+template<class Elem> Elem& list<Elem>::front()
+{
+	return this->begin()->val;
+}
+template<class Elem> Elem& list<Elem>::back()
+{
+	return this->end()->prev->val;
+}
