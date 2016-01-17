@@ -1,6 +1,9 @@
 *.opensdf
 *.sdf
 *.suo
+Debug/
+*vcxproj
+*.filters
 # Compiled Object files
 *.slo
 *.lo
