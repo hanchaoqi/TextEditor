@@ -173,4 +173,68 @@ public:
 		distance(begin(), end(), result);
 		return result;
 	}
+	size_type max_size()const{ return size_type(-1); }
+	reference front(){ return *begin(); }
+	const_reference front()const{ return *begin(); }
+
+	reference back(){ return *(--end()); }
+	const_reference back(){ return *(--end()); }
+
+	void swap(list<T, Alloc>& x){ __STD::swap(node, x.node); }
+
+	iterator insert(iterator position, const T& x)
+	{
+		link_type tmp = create_node(x);
+		tmp->next = position.node;
+		tmp->prev = position.node->prev;
+		(link_type(position.node->prev))->next = tmp;
+		position.node->prev = tmp;
+		return tmp;
+	}
+	iterator insert(iterator position){ return insert(position, T()); }
+#ifdef __STL_MEMBER_TEMPLATES
+	template<class InputIterator> void insert(iterator position,InputIterator first,InputIterator last);
+#else
+	void insert(iterator position, const T* first, const T* last);
+	void insert(iterator position, const_iterator first, const_iterator last);
+#endif
+	void insert(iterator pos, size_type n, const T& x);
+	void insert(iterator pos, int n, const T& x)
+	{
+		insert(pos, (size_type)n, x);
+	}
+	void insert(iterator pos, long n, const T& x)
+	{
+		insert(pos, (size_type)n, x);
+	}
+
+	void push_front(const T& x){ insert(begin(), x); }
+	void push_back(const T& x){ insert(end(), x); }
+
+	iterator erase(iterator position){
+		link_type next_node = (link_type)position.node->next;
+		link_type prev_node = (link_type)position.node->prev;
+		prev_node->next = next_node;
+		next_node->prev = prev_node;
+		destroy_node(position.node);
+		retirn iterator(next_node);
+	}
+	iterator erase(iterator first, iterator last);
+	void resize(size_type new_size, const T& x);
+	void resize(size_type new_size){ resize(new_size, T()); }
+	void clear();
+
+	void pop_front(){ erase(begin()); }
+	void pop_back(){
+		iterator tmp = end();
+		erase(--tmp);
+	}
+	list(size_type n, const T& value){ fill_initialize(n, value); }
+	list(int n, const T& value){ fill_initialize(n, value); }
+	list(long n, const T& value){ fill_initialize(n, value); }
+	explicit list(size_type n){ fill_initialize(n, T()); }
+
+#ifdef __STL_MEMBER_TEMPLATES
+#else
+#endif
 };

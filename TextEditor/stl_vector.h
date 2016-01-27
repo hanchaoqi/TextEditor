@@ -1,9 +1,9 @@
 #include <iostream>
 #include <string>
-using namespace std;
+//using namespace std;
 struct Out_of_range{};
 
-template<class T, class A = allocator<T>> class vector{
+template<class T, class A = std::allocator<T>> class vector{
 	int sz, space;
 	T* elem;
 	A alloc;
