@@ -10,7 +10,7 @@ template<class T, class Ref, class Ptr> struct __list_iterator{
 	typedef __list_iterator<T, const T&, const T*> const_iterator;
 	typedef __list_iterator<T, Ref, Ptr> self;
 
-	typedef bidirectional_iterator_tag iterator_category;
+	typedef std::bidirectional_iterator_tag iterator_category;
 	typedef T value_type;
 	typedef Ref reference;
 	typedef Ptr pointer;
@@ -51,10 +51,10 @@ template<class T, class Ref, class Ptr> struct __list_iterator{
 	}
 };
 #ifndef __STL_CLASS_PARTIAL_SPECIALIZATION
-template<class T, class Ref, class Ptr> inline bidirectional_iterator_tag 
+template<class T, class Ref, class Ptr> inline std::bidirectional_iterator_tag 
 iterator_category(const __list_iterator<T, Ref, Ptr>&)
 {
-	return bidirectional_iterator_tag();
+	return std::bidirectional_iterator_tag();
 }
 
 template<class T, class Ref, class Ptr> inline T* 
@@ -72,7 +72,7 @@ template<class T, class Alloc = alloc> class list{
 protected:
 	typedef void* void_pointer;
 	typedef  __list_node<T> list_node;
-	typedef simple_alloc<list_node, Alloc> list_node_allocator;
+	typedef std::simple_alloc<list_node, Alloc> list_node_allocator;
 public:
 	typedef T value_type;
 	typedef value_type* pointer;
@@ -87,14 +87,12 @@ public:
 	typedef __list_iterator<T, T&, T*>	iterator;
 	typedef __list_iterator<T, const T&, const T*> const_iterator;
 
-#ifdef __STL_CLASS_PARTIAL_SPECIALIZATION
-	typedef reverse_iterator<const_iterator> const_reverse_iterator;
-	typedef reverse_iterator<iterator> reverse_iterator;
-#else
-	typedef reverse_bidirectional_iterator<const_iterator, value_type, 
-		const_reference, difference_type> const_reverse_iterator;
-	typedef reverse_bidirectional_iterator<iterator, value_type, 
-		reference, difference_type> reverse_iterator;
+//#ifdef __STL_CLASS_PARTIAL_SPECIALIZATION
+	typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+	typedef std::reverse_iterator<iterator> reverse_iterator;
+/*#else
+	typedef std::reverse_bidirectional_iterator<const_iterator, value_type,	const_reference, difference_type> const_reverse_iterator;
+	typedef std::reverse_bidirectional_iterator<iterator, value_type, reference, difference_type> reverse_iterator;
 #endif /*__STL_CLASS_PARTIAL_SPECIALIZATION*/
 protected:
 	link_type node;
@@ -235,6 +233,292 @@ public:
 	explicit list(size_type n){ fill_initialize(n, T()); }
 
 #ifdef __STL_MEMBER_TEMPLATES
+	template<class InputIterator> list(InputIterator first,InputIterator last){
+		range_initialize(first, last);
+	}
 #else
+	list(const T* first, const T* last){
+		range_initialize(first, last);
+	}
+	list(const_iterator first, const_iterator last){
+		range_initialize(first, last);
+	}
 #endif
+	list(const list<T, Alloc>& x){
+		range_initialize(x.begin(), x.end());
+	}
+	~list(){
+		clear();
+		put_node(node);
+	}
+	list<T, Alloc>& operator=(const list<T, Alloc>& x);
+protected:
+	void transfer(iterator position, iterator first, iterator last)
+	{
+		if (position != last)
+		{
+			(*(link_type((*last.node).prev))).next = position.node;
+			(*(link_type((*first.node).prev))).next = last.node;
+			(*(link_type((*position.node).prev))).next = first.node;
+			link_type tmp = link_type((*position.node).prev);
+			(*position.node).prev = (*last.node).prev;
+			(*last.node).prev = (*first.node).prev;
+			(*first.node).prev = tmp;
+		}
+	}
+public:
+	void splice(iterator position, list& x)
+	{
+		if (!x.empty())
+		{
+			transfer(position, x.begin(), x.end());
+		}
+	}
+	void splice(iterator position, list&, iterator i)
+	{
+		iterator j = i;
+		++j;
+		if (position == i || position == j)
+			return;
+		transfer(position, i, j);
+	}
+	void splice(iterator position,iterator first, iterator last)
+	{
+		if (first != last)
+			transfer(position, first, last);
+	}
+	void remove(const T& value);
+	void unique();
+	void merge(list& x);
+	void reverse();
+	void sort();
+#ifdef __STL_MEMBER_TEMPLATES  
+	template<class Predicate> void remove_if(Predicate);
+	template<class BinaryPredicate> void unique(BinaryPredicate);
+	template<class StrictWeakOrding> void merge(list&,StrictWeakOrding);
+	template<class StrictWeakOrding> void sort(StrictWeakOrding);
+#endif
+	//friend bool operator==__STL_NULL_TMPL_ARGS(const list& x, const list& y);
 };
+template<class T, class Alloc> inline bool operator==(const list<T, Alloc>& x, const list<T, Alloc>& y)
+{
+	typedef typename list<T, Alloc>::link_type link_type;
+	link_type e1 = x.node;
+	link_type e2 = y.node;
+	link_type n1 = (link_type)e1->next;
+	link_type n2 = (link_type)e2->next;
+	for (; n1 != e1&&n2 != e2;n1=(link_type)n1->next,n2=(link_type)n2->next)
+	if (n1->data != n2->data)
+		return false;
+	return n1 == e1&&n2 == e2;
+}
+template<class T, class Alloc> inline bool operator<(const list<T, Alloc>& x, const list<T, Alloc>& y)
+{
+	return lexicographical_compare(x.begin(), x.end(), y.begin(), y.end());
+}
+#ifdef __STL_FUNCTION_TMPL_PARTIAL_ORDER
+template<class T, class Alloc> inline void swap(list<T, Alloc>& x, list<T, Alloc>& y)
+{
+	x.swap(y);
+}
+#endif
+#ifdef __STL_MEMBER_TEMPLATES  
+template <class T, class Alloc> template <class InputIterator> void list<T, Alloc>::insert(iterator position,
+	InputIterator first, InputIterator last) {
+	for (; first != last; ++first)
+		insert(position, first);
+}
+#else
+template <class T, class Alloc> template <class InputIterator> void list<T, Alloc>::insert(iterator position,
+	const T* first, const T* last) {
+	for (; first != last; ++first)
+		insert(position, first);
+}
+template <class T, class Alloc> template <class InputIterator> void list<T, Alloc>::insert(iterator position,
+	const_iterator first, const_iterator last) {
+	for (; first != last; ++first)
+		insert(position, first);
+}
+#endif
+template <class T, class Alloc> void list<T, Alloc>::insert(iterator position, size_type n, const T& x)
+{
+	for (; n > 0; n--)
+		insert(position, x);
+}
+template <class T, class Alloc> void list<T, Alloc>::erase(iterator first, iterator last)
+{
+	while (first != last)
+		erase(first++);
+	return last;
+}
+template <class T, class Alloc> void list<T, Alloc>::resize(size_type new_size, const T& x)
+{
+	iterator i = begin();
+	size_type len = 0;
+	for (; i != end() && len < new_size; ++i, ++len);
+	if (len == new_size)
+		erase(i, end());
+	else
+		insert(end(), new_size - len, x);
+}
+template <class T, class Alloc> void list<T, Alloc>::clear()
+{
+	link_type cur = (link_type)node->next;
+	while (cur != node)
+	{
+		link_type tmp = cur;
+		cur = (link_type)cur->next;
+		destory_node(tmp);
+	}
+	node->next = node;
+	node->prev = node;
+}
+template <class T, class Alloc> list<T, Alloc>& list<T, Alloc>::operator=(const list<T, Alloc>& x)
+{
+	if (this != &x)
+	{
+		iterator first1 = begin();
+		iterator last1 = end();
+		const_iterator first2 = x.begin();
+		const_iterator last2 = x.end();
+		while (first1 != last1&&first2 != last2)
+			*first1 ++ = *first2++;
+		if (first2 == last2)
+			earse(first1, last1);
+		else
+			insert(last1, first2, last2);
+	}
+	return *this;
+}
+template<class T, class Alloc> void list<T, Alloc>::remove(const T& value)
+{
+	iterator first = begin();
+	iterator last = end();
+	while (first != last)
+	{
+		iterator next = first;
+		++next;
+		if (*first == value)
+			earse(first);
+		first = next;
+	}
+}
+template<class T, class Alloc> void list<T, Alloc>::unique()
+{
+	iterator first = begin();
+	iterator last = end();
+	if (first == last)
+		return;
+	iterator next = first;
+	while (++next != last)
+	{
+		if (*first == *next)
+		{
+			erase(next);
+		}
+		else
+			first = next;
+		next = first;
+	}
+}
+template<class T, class Alloc> void list<T, Alloc>::merge(list<T, Alloc>& x)
+{
+	iterator first1 = begin();
+	iterator last1 = end();
+	iterator first2 = x.begin();
+	iterator last2 = x.end();
+
+	while (first1!=last1&&first2!=last2)
+	{
+		if (*first2 < *first1)
+		{
+			iterator next = first2;
+			transfer(first1, first2, ++next);
+			first2 = next;
+		}
+		else
+			++first1;
+	}
+	if (first2 != last2)
+		transfer(last1, first2, last2);
+}
+template<class T, class Alloc> void list<T, Alloc>::sort()
+{
+	if (node->next == node || link_type(node->next)->next == node)
+		return;
+	list<T, Alloc> carry;
+	list<T, Alloc> counter[64];
+	int fill = 0;
+	
+	while (!empty())
+	{
+		carry.splice(carry.begin(), *this, begin());
+		int i = 0;
+		while (i < fill&&!counter[i].empty())
+		{
+			counter[i].merge(carry);
+			carry.swap(counter[i++]);
+		}
+		carry.swap(counter[i]);
+		if (i == fill)
+			++fill;
+	}
+	for (int i = 1; i < fill; i++)
+		counter[i].merge(counter[i - 1]);
+	swap(counter[fill - 1]);
+}
+#ifdef __STL_MEMBER_TEMPLATES
+template<class T, class Alloc> template<class Predicate> void list<T, Alloc>::remove_if(Predicate pred)
+{
+	iterator first = begin();
+	iterator last = end();
+	while (first != last)
+	{
+		iterator next = first;
+		++next;
+		if (pred(*first))
+			erase(first);
+		first = next;
+	}
+}
+template<class T,class Alloc> template<class BinaryPredicate> void list<T,Alloc>::unique(BinaryPredicte binary_pred)
+{
+	iterator first = begin();
+	iterator last = end();
+	if(first==last)
+		return;
+	iterator next=first;
+	while (++next!=last)
+	{
+		if(binary_pred(*first,*next))
+			erase(next);
+		else
+			first=next;
+		next=first;
+	}
+}
+template<class T,class Alloc> template<class StrictWeakOrdering> void list<T,Alloc>::unique(StrictWeakOrdering comp)
+{
+	if(node->next==node||link_type(node->next)->next==node)
+		return;
+	list<T,Alloc> carry;
+	list<T,Alloc> counter[64];
+	int fill=0;
+	while(!empty())
+	{
+		carry.splice(carry.begin(),*this,begin());
+		int i=0;
+		while (i < fill&&!counter[i].empty())
+		{
+			counter[i].merge(carry);
+			carry.swap(counter[i++]);
+		}
+		carry.swap(counter[i]);
+		if (i == fill)
+			fill++;
+	}
+	for (int i = 1;i<fill;i++)
+		counter[i].merge(counter[i-1]);
+	swap(counter[fill - 1]);
+}
+#endif

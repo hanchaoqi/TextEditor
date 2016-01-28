@@ -10,18 +10,18 @@ int main()
 
 	for (vector<int>::iterator p = v.begin(); p != v.end(); p++)
 	{
-		cout << *p << '\t';
+		std::cout << *p << '\t';
 	}
-	cout << endl;
+	std::cout << std::endl;
 
-	list<int> l;
+	/*list<int> l;
 	l.push_back(1);
 	l.push_back(2);
 	l.push_back(3);
 	
 	for (list<int>::iterator it = l.begin(); it != l.end(); it++)
-		cout << *it << "\t";
-	cout << endl;
+		std::cout << *it << "\t";
+	std::cout << std::endl;*/
 	system("pause");
 	return 0;
 }
