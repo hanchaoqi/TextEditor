@@ -288,7 +288,6 @@ template<class T, class Alloc> inline void swap(list<T, Alloc>& x, list<T, Alloc
 	x.swap(y);
 }
 
-
 template <class T, class Alloc> void list<T, Alloc>::insert(iterator position,	const T* first, const T* last) {
 	for (; first != last; ++first)
 		insert(position, first);

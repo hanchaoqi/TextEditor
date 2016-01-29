@@ -14,7 +14,7 @@ int main()
 	std::cout << std::endl;
 
 	list<int> l;
-	int data[] = { 21, 45, 1, 30, 52, 3, 58, 47, 22, 59, 0, 58 };
+	int data[] = { 21, 45, 1, 30, 52, 3, 58, 47, 22, 59, 1, 58 };
 	for (int i = 0; i < 12; i++)
 		l.push_back(data[i]);
 	
@@ -23,7 +23,6 @@ int main()
 	std::cout << std::endl;
 
 	l.sort();
-
 	for (list<int>::iterator it = l.begin(); it != l.end(); it++)
 		std::cout << *it << "\t";
 	std::cout << std::endl;
