@@ -1,6 +1,5 @@
 #include "stl_vector.h"
 #include "stl_list.h"
-
 int main()
 {
 	vector<int> v;
@@ -14,14 +13,20 @@ int main()
 	}
 	std::cout << std::endl;
 
-	/*list<int> l;
-	l.push_back(1);
-	l.push_back(2);
-	l.push_back(3);
+	list<int> l;
+	int data[] = { 21, 45, 1, 30, 52, 3, 58, 47, 22, 59, 0, 58 };
+	for (int i = 0; i < 12; i++)
+		l.push_back(data[i]);
 	
 	for (list<int>::iterator it = l.begin(); it != l.end(); it++)
 		std::cout << *it << "\t";
-	std::cout << std::endl;*/
+	std::cout << std::endl;
+
+	l.sort();
+
+	for (list<int>::iterator it = l.begin(); it != l.end(); it++)
+		std::cout << *it << "\t";
+	std::cout << std::endl;
 	system("pause");
 	return 0;
 }

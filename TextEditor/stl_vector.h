@@ -123,7 +123,7 @@ template<class T, class A> void vector<T, A>::print()
 {
 	for (int i = 0; i < sz; i++)
 	{
-		cout << elem[i] << "\t";
+		std::cout << elem[i] << "\t";
 	}
 }
 template<class T, class A> typename vector<T, A>::iterator vector<T, A>::begin()

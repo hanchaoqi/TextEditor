@@ -1,3 +1,4 @@
+
 template<class T> struct __list_node{
 	typedef void* void_pointer;
 	void_pointer next;
@@ -50,7 +51,7 @@ template<class T, class Ref, class Ptr> struct __list_iterator{
 		return tmp;
 	}
 };
-#ifndef __STL_CLASS_PARTIAL_SPECIALIZATION
+
 template<class T, class Ref, class Ptr> inline std::bidirectional_iterator_tag 
 iterator_category(const __list_iterator<T, Ref, Ptr>&)
 {
@@ -66,13 +67,12 @@ template<class T, class Ref, class Ptr> inline ptrdiff_t*
 distance_type(const __list_iterator<T, Ref, Ptr>&){
 	return 0;
 }
-#endif /*__STL_CLASS_PARTIAL_SPECIALIZATION*/
 
-template<class T, class Alloc = alloc> class list{
+template<class T, class Alloc = std::allocator<T>> class list{
 protected:
 	typedef void* void_pointer;
 	typedef  __list_node<T> list_node;
-	typedef std::simple_alloc<list_node, Alloc> list_node_allocator;
+	std::allocator<list_node> list_node_allocator;
 public:
 	typedef T value_type;
 	typedef value_type* pointer;
@@ -87,28 +87,26 @@ public:
 	typedef __list_iterator<T, T&, T*>	iterator;
 	typedef __list_iterator<T, const T&, const T*> const_iterator;
 
-//#ifdef __STL_CLASS_PARTIAL_SPECIALIZATION
 	typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 	typedef std::reverse_iterator<iterator> reverse_iterator;
-/*#else
-	typedef std::reverse_bidirectional_iterator<const_iterator, value_type,	const_reference, difference_type> const_reverse_iterator;
-	typedef std::reverse_bidirectional_iterator<iterator, value_type, reference, difference_type> reverse_iterator;
-#endif /*__STL_CLASS_PARTIAL_SPECIALIZATION*/
+
 protected:
 	link_type node;
-	link_type get_node(){ return list_node_allocator::allocate(); }
-	void put_node(link_type p){ list_node_allocator::deallocate(p); }
+	link_type get_node(){ 
+		return list_node_allocator.allocate(sizeof(link_type));
+	}
+	void put_node(link_type p){
+		list_node_allocator .deallocate(p, sizeof(p));
+	}
 
 	link_type create_node(const T& x){
 		link_type p = get_node();
-		__STL_TRY{
-			construct(&p->data, x);
-		}
-		__STL_UNWIND(put_node(p));
+		p->data = x;
+		
 		return p;
 	}
 	void destroy_node(link_type p){
-		destroy(&p->data);
+	    std::_Destroy(&p->data);
 		put_node(p);
 	}
 
@@ -125,34 +123,17 @@ protected:
 		}
 		__STL_UNWIND(clear(); put_node(node));
 	}
-#ifdef __STL_MEMBER_TEMPLATES  
-	template<class InputIterator>
-	void range_initialize(InputIterator first, InputIterator last)
-	{
-		empty_initialize();
-		__STL_TRY{
-			insert(begin(), first, last);
-		}
-		__STL_UNWIND(clear(); put_node(node));
-	}
-#else
+                                    
 	void range_initialzie(const T* first, const T* last)
 	{
 		empty_initialize();
-		__STL_TRY{
-			insert(begin(), first, last);
-		}
-		__STL_UNWIND(clear(); put_node(node));
+		insert(begin(), first, last);
 	}
 	void range_initialize(const_iterator first, const_iterator last)
 	{
 		empty_initialize();
-		__STL_TRY{
-			insert(begin(), first, last);
-		}
-		__STL_UNWIND(clear(); put_node(node));
+		insert(begin(), first, last);
 	}
-#endif
 
 public:
 	list(){ empty_initialize(); }
@@ -176,9 +157,9 @@ public:
 	const_reference front()const{ return *begin(); }
 
 	reference back(){ return *(--end()); }
-	const_reference back(){ return *(--end()); }
+	const_reference back()const{ return *(--end()); }
 
-	void swap(list<T, Alloc>& x){ __STD::swap(node, x.node); }
+	void swap(list<T, Alloc>& x){ std::swap(node, x.node); }
 
 	iterator insert(iterator position, const T& x)
 	{
@@ -190,12 +171,9 @@ public:
 		return tmp;
 	}
 	iterator insert(iterator position){ return insert(position, T()); }
-#ifdef __STL_MEMBER_TEMPLATES
-	template<class InputIterator> void insert(iterator position,InputIterator first,InputIterator last);
-#else
+
 	void insert(iterator position, const T* first, const T* last);
 	void insert(iterator position, const_iterator first, const_iterator last);
-#endif
 	void insert(iterator pos, size_type n, const T& x);
 	void insert(iterator pos, int n, const T& x)
 	{
@@ -232,18 +210,12 @@ public:
 	list(long n, const T& value){ fill_initialize(n, value); }
 	explicit list(size_type n){ fill_initialize(n, T()); }
 
-#ifdef __STL_MEMBER_TEMPLATES
-	template<class InputIterator> list(InputIterator first,InputIterator last){
-		range_initialize(first, last);
-	}
-#else
 	list(const T* first, const T* last){
 		range_initialize(first, last);
 	}
 	list(const_iterator first, const_iterator last){
 		range_initialize(first, last);
 	}
-#endif
 	list(const list<T, Alloc>& x){
 		range_initialize(x.begin(), x.end());
 	}
@@ -292,13 +264,7 @@ public:
 	void merge(list& x);
 	void reverse();
 	void sort();
-#ifdef __STL_MEMBER_TEMPLATES  
-	template<class Predicate> void remove_if(Predicate);
-	template<class BinaryPredicate> void unique(BinaryPredicate);
-	template<class StrictWeakOrding> void merge(list&,StrictWeakOrding);
-	template<class StrictWeakOrding> void sort(StrictWeakOrding);
-#endif
-	//friend bool operator==__STL_NULL_TMPL_ARGS(const list& x, const list& y);
+
 };
 template<class T, class Alloc> inline bool operator==(const list<T, Alloc>& x, const list<T, Alloc>& y)
 {
@@ -316,36 +282,28 @@ template<class T, class Alloc> inline bool operator<(const list<T, Alloc>& x, co
 {
 	return lexicographical_compare(x.begin(), x.end(), y.begin(), y.end());
 }
-#ifdef __STL_FUNCTION_TMPL_PARTIAL_ORDER
+
 template<class T, class Alloc> inline void swap(list<T, Alloc>& x, list<T, Alloc>& y)
 {
 	x.swap(y);
 }
-#endif
-#ifdef __STL_MEMBER_TEMPLATES  
-template <class T, class Alloc> template <class InputIterator> void list<T, Alloc>::insert(iterator position,
-	InputIterator first, InputIterator last) {
+
+
+template <class T, class Alloc> void list<T, Alloc>::insert(iterator position,	const T* first, const T* last) {
 	for (; first != last; ++first)
 		insert(position, first);
 }
-#else
-template <class T, class Alloc> template <class InputIterator> void list<T, Alloc>::insert(iterator position,
-	const T* first, const T* last) {
+template <class T, class Alloc> void list<T, Alloc>::insert(iterator position,const_iterator first, const_iterator last) {
 	for (; first != last; ++first)
 		insert(position, first);
 }
-template <class T, class Alloc> template <class InputIterator> void list<T, Alloc>::insert(iterator position,
-	const_iterator first, const_iterator last) {
-	for (; first != last; ++first)
-		insert(position, first);
-}
-#endif
+
 template <class T, class Alloc> void list<T, Alloc>::insert(iterator position, size_type n, const T& x)
 {
 	for (; n > 0; n--)
 		insert(position, x);
 }
-template <class T, class Alloc> void list<T, Alloc>::erase(iterator first, iterator last)
+template <class T, class Alloc> typename list<T, Alloc>::iterator list<T, Alloc>::erase(iterator first, iterator last)
 {
 	while (first != last)
 		erase(first++);
@@ -368,7 +326,7 @@ template <class T, class Alloc> void list<T, Alloc>::clear()
 	{
 		link_type tmp = cur;
 		cur = (link_type)cur->next;
-		destory_node(tmp);
+		destroy_node(tmp);
 	}
 	node->next = node;
 	node->prev = node;
@@ -467,58 +425,3 @@ template<class T, class Alloc> void list<T, Alloc>::sort()
 		counter[i].merge(counter[i - 1]);
 	swap(counter[fill - 1]);
 }
-#ifdef __STL_MEMBER_TEMPLATES
-template<class T, class Alloc> template<class Predicate> void list<T, Alloc>::remove_if(Predicate pred)
-{
-	iterator first = begin();
-	iterator last = end();
-	while (first != last)
-	{
-		iterator next = first;
-		++next;
-		if (pred(*first))
-			erase(first);
-		first = next;
-	}
-}
-template<class T,class Alloc> template<class BinaryPredicate> void list<T,Alloc>::unique(BinaryPredicte binary_pred)
-{
-	iterator first = begin();
-	iterator last = end();
-	if(first==last)
-		return;
-	iterator next=first;
-	while (++next!=last)
-	{
-		if(binary_pred(*first,*next))
-			erase(next);
-		else
-			first=next;
-		next=first;
-	}
-}
-template<class T,class Alloc> template<class StrictWeakOrdering> void list<T,Alloc>::unique(StrictWeakOrdering comp)
-{
-	if(node->next==node||link_type(node->next)->next==node)
-		return;
-	list<T,Alloc> carry;
-	list<T,Alloc> counter[64];
-	int fill=0;
-	while(!empty())
-	{
-		carry.splice(carry.begin(),*this,begin());
-		int i=0;
-		while (i < fill&&!counter[i].empty())
-		{
-			counter[i].merge(carry);
-			carry.swap(counter[i++]);
-		}
-		carry.swap(counter[i]);
-		if (i == fill)
-			fill++;
-	}
-	for (int i = 1;i<fill;i++)
-		counter[i].merge(counter[i-1]);
-	swap(counter[fill - 1]);
-}
-#endif
